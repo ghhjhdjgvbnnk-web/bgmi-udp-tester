@@ -1,0 +1,39 @@
+name: Telegram UDP Bot
+
+on:
+  workflow_dispatch:  # ম্যানুয়ালি ট্রিগার
+  schedule:
+    - cron: '*/30 * * * *'  # প্রতি ৩০ মিনিটে চেক (কিপ-অ্যালাইভ)
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      
+      - name: Run Telegram Bot
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ALLOWED_USER_ID: ${{ secrets.ALLOWED_USER_ID }}
+        run: |
+          python telegram_bot.py &
+          BOT_PID=$!
+          echo "Bot PID: $BOT_PID"
+          
+          # বটকে কিছুক্ষণ চালান (Actions-এ ৬ ঘন্টা পর্যন্ত চলে)
+          sleep 3500  # প্রায় ৫৮ মিনিট
+          
+          kill $BOT_PID 2>/dev/null
+          echo "Bot stopped gracefully"
